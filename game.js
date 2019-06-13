@@ -29,6 +29,18 @@ const block_Z = [
             [0,0,1,1],
             [0,0,1,0],
             [0,0,0,0]
+        ],
+        [
+            [0,0,0,0],
+            [0,1,1,0],
+            [0,0,1,1],
+            [0,0,0,0]
+        ],
+        [
+            [0,0,1,0],
+            [0,1,1,0],
+            [0,1,0,0],
+            [0,0,0,0]
         ]
         ];
 const block_S = [
@@ -42,6 +54,18 @@ const block_S = [
             [1,0,0,0],
             [1,1,0,0],
             [0,1,0,0],
+            [0,0,0,0]
+        ],
+        [
+            [0,1,1,0],
+            [1,1,0,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ],
+        [
+            [0,1,0,0],
+            [0,1,1,0],
+            [0,0,1,0],
             [0,0,0,0]
         ]
         ];
@@ -133,8 +157,32 @@ const block_I = [
             [0,0,0,0],
             [1,1,1,1],
             [0,0,0,0]
+        ],
+        [
+            [0,1,0,0],
+            [0,1,0,0],
+            [0,1,0,0],
+            [0,1,0,0]
+        ],
+        [
+            [0,0,0,0],
+            [0,0,0,0],
+            [1,1,1,1],
+            [0,0,0,0]
         ]];
 const block_O = [
+        [
+            [0,1,1,0],
+            [0,1,1,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ],
+        [
+            [0,1,1,0],
+            [0,1,1,0],
+            [0,0,0,0],
+            [0,0,0,0]
+        ],
         [
             [0,1,1,0],
             [0,1,1,0],
@@ -167,18 +215,21 @@ let currentCoordYGridBlock = 0; // Coordonnée verticale actualisee du carre uni
 
 let icompteur = 0;
 let compteurInfo = 0;
-let finalLineY = canvas.height -80;
+let finalLineY = canvas.height -60;
 createGrid(); // Creation of the 10x10 grid
 
 
 function main() {
     // Main Game loop, with an interval of time implemented with a setTimeout function
     startingCount = 0;
+    write("Press X to spin",210,50);
+    write("Press Down to get the",210,100);
+    write("tetromino down",210,120);
     setColors(BLACK,WHITE);
 	setTimeout(function onTick(timeInterval) {
         clearCanvas(LEFT,TOP,canvas.width,canvas.height);
         drawBoard(); //  Display of the grid 
-        drawBlock(WIDTH_PLAYER,HEIGHT_PLAYER,block_L);
+        drawBlock(WIDTH_PLAYER,HEIGHT_PLAYER,block_S);
         getDownBlock();
     // Call main again
     main();
@@ -217,8 +268,8 @@ function drawRect(coordX,coordY,width,height){
 
 function drawBlock(width,height,block){
     let i = currentSpin;
-    if (i > 1) {
-        i -= 2;
+    if (i > 4) {
+        i -= 4;
     }
         for (let j = 0;j < block[i].length;j++) {
             for (let k = 0;k < block[i][j].length;k++) {
@@ -249,12 +300,17 @@ function drawBoard(){
 }
 
 function getDownBlock() {
-    if (currentCoordYBlock < canvas.height - 60) {
+    if (currentCoordYBlock < canvas.height - 40) {
         currentCoordYBlock+=HEIGHT_PLAYER;
     }
     else {
-        currentCoordYBlock = canvas.height - 60;
+        currentCoordYBlock = canvas.height - 40;
     }
+}
+
+function write(message,x,y) {
+  context.font = '16px serif';
+  context.fillText(message, x, y);
 }
 
 function spinBlock() {
@@ -278,8 +334,7 @@ document.onkeydown = function(e) {
     switch (e.keyCode) {
         // Pressing X for starting the game
         case 88:
-            displayInfos( "y:"+currentCoordYBlock);   
-            displayInfos( " x:"+coordXBlock); 
+        spinBlock();
             /* Check if the game is  not already started before starting it
             if (startingCount === 1) {
             clearCanvas(TOP, LEFT,canvas.width,canvas.height);
@@ -299,7 +354,7 @@ document.onkeydown = function(e) {
             break;
         //Right arrow
         case 39:
-            if (coordXBlock == 240 || currentCoordYBlock == canvas.height - 8) {
+            if (coordXBlock == 240 || currentCoordYBlock == canvas.height - 40) {
                 move(0);
             }
             else {
@@ -308,7 +363,7 @@ document.onkeydown = function(e) {
             break;
         //Down arrow
         case 40:
-            spinBlock();
+            currentCoordYBlock = canvas.height-40;
             break;
     }
 };
