@@ -1,7 +1,9 @@
 const canvas = document.getElementById('canvas'); // Create the canvas window, where the game will be played.
 const context = canvas.getContext('2d');
+
 const startingCount = 1;
 const timeInterval = 500;
+
 const TOP = 0;
 const LEFT = 0;
 const WHITE = "#FFFFFF";
@@ -13,9 +15,8 @@ const BLUE = "#0000FF";
 const YELLOW = "#FFFF00";
 const ORANGE = "#FF7000";
 const AQUA = "0000AA";
-const HEIGHT_UNIT = canvas.height/20;
-const WIDTH_UNIT = canvas.width/20;
-const GRAVITY = canvas.height/20;
+
+
 const block_Z = [[[0,1,1,0],[0,0,1,1],[0,0,0,0],[0,0,0,0]],[[0,0,0,1],[0,0,1,1],[0,0,1,0],[0,0,0,0]],
                 [[0,0,0,0],[0,1,1,0],[0,0,1,1],[0,0,0,0]],[[0,0,1,0],[0,1,1,0],[0,1,0,0],[0,0,0,0]]];
 const block_S = [[[0,1,1,0],[1,1,0,0],[0,0,0,0],[0,0,0,0]],[[1,0,0,0],[1,1,0,0],[0,1,0,0],[0,0,0,0]],
@@ -34,24 +35,29 @@ const allBlocks = [block_Z,block_S,block_J,block_L,block_T,block_I,block_O];
 
 let body = document.querySelector("body");
 let div = document.querySelector("div");
+
 let grid = []; // Representation du tableau
+
 let coordXBlock = 0; // Coordonnée horizontale du bloc
 let initialCoordYBlock = 0; // Coordonnée verticale initiale du bloc
 let currentCoordYBlock = 0; // Coordonnée verticale actualisee du bloc
+
 let coordXGridBlock = 0; // Coordonnée horizontale du carre unitaire de la grille
 let initialCoordYGridBlock = 0; // Coordonnée verticale initiale du carre unitaire de la grille
 let currentCoordYGridBlock = 0; // Coordonnée verticale actualisee du carre unitaire de la grille
+
 let icompteur = 0;
 let compteurInfo = 0;
-let currentSpin = 0;
 
 class Tetromino {
-    constructor(x,y,blockArray,spinPosition,color) {
-        this.x = x;
-        this.y = y;
-        this.blockArray = blockArray;
-        this.spinPosition = spinPosition;
-        this.color = color;
+    constructor() {
+        this.x = grille.nbColumns/2*grille.widthUnit;
+        this.y = 0;
+        this.currentIndexBlock = jeu.getRandomInt();
+        this.currentSpin = 0;
+        this.fillColor = RED;
+        this.BorderColor = BLACK;
+        this.movingBlock = true;
     }
     
     getX() {
@@ -62,44 +68,55 @@ class Tetromino {
         return this.y;
     }
     
-    getDownBlock() {
-        if (this.y < canvas.height - 40) {
-            this.y+=HEIGHT_UNIT;
-        }
-        else {
-            this.y = canvas.height - 40;
-            let newBloc = new Tetromino(0,0,block_I,block_I[0],BLUE);
-            newBloc.drawBlock(WIDTH_UNIT,HEIGHT_UNIT,allBlocks[4]);
-            newBloc.getDownBlock();
-        }
-        return this.y;
-    }
-    
-    drawBlock(width,height,block){
-        let i = currentSpin;
+    drawBlock(){
+        let block = allBlocks[this.currentIndexBlock];
+        let i = this.currentSpin;
         if (i > 4) {
             i -= 4;
         }
         for (let j = 0;j < block[i].length;j++) {
             for (let k = 0;k < block[i][j].length;k++) {
                 if (block[i][j][k] != 0) {
-                    jeu.setColors(BLACK,BLUE);
-                    jeu.drawRect((k*WIDTH_UNIT) + this.x,(j*HEIGHT_UNIT)+this.y,WIDTH_UNIT,HEIGHT_UNIT);
+                    jeu.setColors(this.borderColor,this.fillColor);
+                    jeu.drawRect((k*grille.widthUnit) + this.x,(j*grille.heightUnit)+
+                    this.y,grille.widthUnit,grille.heightUnit);
                     }
                 }
             }
         }
     
-    spinBlock() {
-        currentSpin+=1;
-        if (currentSpin==4) {
-            currentSpin = 0;
+    getDownBlock() {
+        let finalLine = canvas.height - grille.heightUnit;
+        if (this.y < finalLine) {
+            this.y+= grille.gravity;
         }
-        return currentSpin;
+        else {
+            this.y = finalLine; 
+            this.movingBlock = false;
+        }
+        return this.y;
+    }
+    
+    spinBlock() {
+        if (this.movingBlock == true) {
+            this.currentSpin+=1;
+            if (this.currentSpin==4) {
+                this.currentSpin = 0;
+            }
+        return this.currentSpin;
+        }
+    }
+    checkCollision() {
+        
     }
 
     move(sens) {
-        this.x += sens;
+        if (this.x <= 0 || this.x >= 140 || this.y == 360){
+            this.x += 0;
+        }
+        else {
+            this.x += sens;
+        }
     }
     
     stop() {
@@ -109,34 +126,39 @@ class Tetromino {
 }
 
 class Grid {
-    constructor(nbRows,nbColumns,heightUnit,widthUnit) {
+    constructor(nbRows,nbColumns) {
+        let gridHeight = canvas.height;
+        let gridWidth = canvas.width/2;
         this.nbRows = nbRows;
         this.nbColumns = nbColumns;
-        this.heightUnit = heightUnit;
-        this.widthUnit = widthUnit;
+        this.heightUnit = gridHeight/nbRows;
+        this.widthUnit = gridWidth/nbColumns;
+        this.gravity = this.heightUnit;
     }
     
     createGrid() {
         // Cree un tableau 2D representant la grille de jeu
-        for (var i = 0;i<10;i++) {
+        for (var i = 0;i<this.nbRows;i++) {
             grid.push([]);
-            for (var j = 0;j<10;j++) {
-                grid[i].push(0);
+            for (var j = 0;j<this.nbColumns;j++) {
+                    grid[i].push(0);
                 }
             }
         }
         
     drawGrid(){
         jeu.setColors(BLACK,WHITE);
-        for (var i = 0;i<10;i++) {
-            while (currentCoordYGridBlock < canvas.height) {
-                jeu.drawRect(coordXGridBlock,currentCoordYGridBlock,WIDTH_UNIT,HEIGHT_UNIT);
-                currentCoordYGridBlock+= HEIGHT_UNIT;
-                }
-            coordXGridBlock+=WIDTH_UNIT;
+        for (var i = 0;i<this.nbColumns;i++) {
+            for (var j = 0; j < this.nbRows;j++) {
+                jeu.drawRect(coordXGridBlock,currentCoordYGridBlock,this.widthUnit,this.heightUnit);
+                currentCoordYGridBlock+= this.heightUnit;
+            }
+            coordXGridBlock+= this.widthUnit;
             currentCoordYGridBlock= 0;
             }
         }
+    
+                
         
     updateGrid(){
         for (let i = 0;i<4;i++) {
@@ -160,16 +182,18 @@ class Grid {
 class Game {
     constructor() {}
     
-    getRandomInt(min, max) {
-        min = Math.ceil(min);
-        max = Math.floor(max);
+    getRandomInt() {
+        let min = 0;
+        let max = 6;
         return Math.floor(Math.random() * (max - min +1)) + min;
     }
 
     displayInfos() {
-        this.write("Press X to spin",210,50);
-        this.write("Press Down to get the",210,100);
-        this.write("tetromino down",210,120);
+        let textX = canvas.width/2+50;
+        let textY = canvas.height/2;
+        this.write("Press X to spin",textX,textY-50);
+        this.write("Press Down to get the",textX,textY);
+        this.write("tetromino down",textX,textY+50);
     }
 
     setColors(colorBorder,colorFull){
@@ -198,24 +222,25 @@ class Game {
 	    setTimeout(function onTick(timeInterval) {
             grille.clearCanvas(LEFT,TOP,canvas.width,canvas.height);
             grille.drawGrid(); //  Display of the grid 
-            bloc.drawBlock(WIDTH_UNIT,HEIGHT_UNIT,allBlocks[currentBlockForm]);
+            bloc.drawBlock();
             bloc.getDownBlock();
         // Call main again
         jeu.start();
         }, timeInterval)
     }
 }
-let grille = new Grid(10,10,HEIGHT_UNIT,WIDTH_UNIT);
-let bloc = new Tetromino(0,0,block_I,block_I[0],BLUE);
+
 let jeu = new Game();
-let currentBlockForm = jeu.getRandomInt(0,6);
+let grille = new Grid(20,10);
+let bloc = new Tetromino();
 jeu.start();
+
 
 document.onkeydown = function(e) {
     switch (e.keyCode) {
         // Space
         case 32:
-            bloc.spinBlock();
+            bloc.stop();
         // Pressing X for starting the game
         case 88:
             grille.updateGrid();
@@ -233,8 +258,12 @@ document.onkeydown = function(e) {
                 bloc.move(0);
             }
             else {
-                bloc.move(-WIDTH_UNIT);
+                bloc.move(-grille.widthUnit);
             }
+            break;
+        //Up arrow
+        case 38:
+            bloc.spinBlock();
             break;
         //Right arrow
         case 39:
@@ -242,12 +271,12 @@ document.onkeydown = function(e) {
                 bloc.move(0);
             }
             else {
-                bloc.move(WIDTH_UNIT);
+                bloc.move(grille.widthUnit);
             }
             break;
         //Down arrow
         case 40:
-            currentCoordYBlock = canvas.height-40;
+            bloc.y = canvas.height-40;
             break;
     }
 };
